@@ -1,0 +1,6 @@
+correlation sécheresse, prix de l'hydroélectrité, niveau des lacs, repérage de la sécheresse
+analyse des donnéesn faire des fonction avec id en entrée
+agreagation par mois/semestre
+courbe dans le temps.
+
+test de prédiction du prix de l'électricité avec les 2 mois avant
