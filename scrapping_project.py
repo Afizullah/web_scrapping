@@ -7,6 +7,9 @@ Created on Fri Oct  4 10:24:57 2019
 
 from bs4 import BeautifulSoup as bs
 import requests
+import os
+from datetime import datetime
+import pandas as pd
 """
 
 useful url:
@@ -29,7 +32,15 @@ useful url:
 ## page où se trouve les nom et codes des lacs de l'Oregon, Washington et Californie
 url1 = "https://waterdata.usgs.gov/nwis/dv?referred_module=sw&state_cd=ca&state_cd=or&state_cd=wa&site_tp_cd=LK&format=station_list&group_key=NONE&range_selection=days&period=365&begin_date=2018-10-20&end_date=2019-10-19&date_format=YYYY-MM-DD&rdb_compression=file&list_of_search_criteria=state_cd%2Csite_tp_cd%2Crealtime_parameter_selection"
 ## page avec un tsv des données recherché
-url2 = "https://waterdata.usgs.gov/nwis/dv?format=rdb&site_no=09427500&referred_module=sw&period=&begin_date=2013-01-01&end_date=2018-01-01"
+#☺url2 = "https://waterdata.usgs.gov/nwis/dv?format=rdb&site_no=09427500&referred_module=sw&period=&begin_date=2013-01-01&end_date=2018-01-01"
+
+def validate(date_text):
+    print(date_text)
+    try:
+        datetime.strptime(date_text, '%Y-%m-%d')
+        return True
+    except:
+        return False
 
 
 def get_soup(url):
@@ -57,21 +68,40 @@ def generate_url(site_code):
 
 
 def get_data(site_code, site_name):
-    file_name = site_name.strip().replace(" ", "_").replace('/', '-').replace(',','') + ".tsv"
+    file_name = site_name.strip().replace(" ", "_").replace('/', '-').replace(',','_') + ".tsv"
     _url = generate_url(site_code)
     text = get_soup(_url).text
     to_be_parsed = text.split('\n')
     table_rows = [entry for entry in to_be_parsed if "#" not in entry]
+    table_rows.pop(1)
     test = "\n".join(table_rows)
     file1 = open("data/"+file_name, "w")
     file1.write(test)
     file1.close()
-    return True
+    return test
 
+def scrap(url):
+    soup = get_soup(url)
+    Liste = get_code_name(soup)
+    for code, name in Liste:
+        get_data(code, name)
+    for file in os.listdir("data"):
+        if (os.stat("data/" + file).st_size < 50_000) or ("LAKE" not in file and "RESERVOIR" not in file):
+            print(file)
+            os.remove("data/" + file)
+            
+scrap(url1)
 
-soup = get_soup(url1)
-Liste = get_code_name(soup)
-for code, name in Liste[175:]:
-    get_data(code, name)
-
-
+def format_dataframes():
+    for file in os.listdir("data"):
+        df = pd.read_csv("data/" + file, sep="\t")
+        df = df.drop(columns=['agency_cd', 'site_no'])
+        for col in df.columns:
+            if df[col][0] == 'A':
+                df.drop(columns=col, inplace=True)
+        df.interpolate(method="linear", limit_direction="both", inplace=True)
+        try:
+            os.remove("data_formated/" + file[:-3] + "csv")
+        except:
+            pass
+        df.to_csv("data_formated/" + file[:-3] + "csv")
