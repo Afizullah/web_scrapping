@@ -93,6 +93,7 @@ def scrap(url):
 scrap(url1)
 
 def format_dataframes():
+    
     for file in os.listdir("data"):
         df = pd.read_csv("data/" + file, sep="\t")
         df = df.drop(columns=['agency_cd', 'site_no'])
@@ -100,8 +101,20 @@ def format_dataframes():
             if df[col][0] == 'A':
                 df.drop(columns=col, inplace=True)
         df.interpolate(method="linear", limit_direction="both", inplace=True)
+        df = pd.concat((df['datetime'], df[df.columns[1:]].sum(axis=1)), axis=1)
+        df.rename(columns={df.columns[1] : file[:-3]}, inplace=True)
         try:
-            os.remove("data_formated/" + file[:-3] + "csv")
+            os.remove("series/" + file[:-3] + "csv")
         except:
             pass
-        df.to_csv("data_formated/" + file[:-3] + "csv")
+        df.to_csv("series/" + file[:-3] + "csv")
+
+def create_data():
+    df = pd.read_csv("series/" + os.listdir("series")[0], index_col=0)
+    for file in os.listdir("series")[1:]:
+        df_bis = pd.read_csv("series/" + file, index_col=0)
+        df = df.merge(df_bis, on='datetime', how='outer', copy=False)
+    df.interpolate(method="linear", limit_direction="both", inplace=True)
+    df.sort_values(by='datetime')
+    df.to_csv('data.csv')
+    return df 
