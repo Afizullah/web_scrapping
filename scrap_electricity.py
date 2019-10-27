@@ -26,13 +26,12 @@ def get_soup(url):
     return bs(response.content, "lxml")
 
 
-def get_data():
+def get_data_generated():
     """
-    scrap les données de la page et les enregistrent telle quelle au format tsv (tab separated values)
     """
     
     # nom du fichier de donnée que je vais créer
-    file_name = "electricity.csv"
+    file_name = "electricity_generated.csv"
             
     #si la clé n'est plus valide, se refaire une clé sur le site de l'EIA
     _url = "http://api.eia.gov/series/?api_key=d60d4ec7bba3a3b847c218b883a30e52&series_id=ELEC.GEN.HYC-US-98.A"
@@ -43,4 +42,39 @@ def get_data():
     df = pd.DataFrame(data, columns=['datetime', 'electricity_generated'])
     df.to_csv(file_name)
     return df
+
+def get_value(tr):
     
+    liste = tr.findAll('td')
+    return [el.text.strip().replace('\xa0', " ") for el in liste]
+    
+
+def get_data_price():
+    """
+    """
+    
+    # nom du fichier de donnée que je vais créer
+    file_name = "electricity_price.csv"
+            
+    #si la clé n'est plus valide, se refaire une clé sur le site de l'EIA
+    _url = "https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_03"
+    
+    soup = get_soup(_url)    
+    node = soup.find('table', attrs= {"class":'table'})
+    list_of_table = node.findAll('tr')
+    res = [get_value(el) for el in list_of_table]
+    res.index(['Annual Totals'])
+    #◘chopper les prix par an indice 0 = année, ind -1 = all sector
+    res.index(['Year 2017'])
+    #chopper tous les mois
+    res.index(['Year 2018'])
+    res.index(['Year 2019'])
+    #s'arrêter juste avant cette année
+    res.index(['Year to Date'])
+    
+    """
+    data = json.loads(content[0])['series'][0]['data']
+    df = pd.DataFrame(data, columns=['datetime', 'electricity_generated'])
+    df.to_csv(file_name)
+    return df
+    """
