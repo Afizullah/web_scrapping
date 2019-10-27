@@ -8,7 +8,6 @@ Created on Fri Oct  4 10:24:57 2019
 from bs4 import BeautifulSoup as bs
 import requests
 import os
-from datetime import datetime
 import pandas as pd
 """
 
@@ -33,15 +32,6 @@ useful url:
 url1 = "https://waterdata.usgs.gov/nwis/dv?referred_module=sw&state_cd=ca&state_cd=or&state_cd=wa&site_tp_cd=LK&format=station_list&group_key=NONE&range_selection=days&period=365&begin_date=2018-10-20&end_date=2019-10-19&date_format=YYYY-MM-DD&rdb_compression=file&list_of_search_criteria=state_cd%2Csite_tp_cd%2Crealtime_parameter_selection"
 # page avec un tsv des données recherché pour un lac random entre le 01/01/2011 et le 01/01/2018
 # url2 = "https://waterdata.usgs.gov/nwis/dv?format=rdb&site_no=09427500&referred_module=sw&period=&begin_date=2011-01-01&end_date=2018-01-01"
-def validate(date_text):
-    """
-    Test si la chaîne de charactère est au format YYYY-MM-DD
-    """
-    try:
-        datetime.strptime(date_text, '%Y-%m-%d')
-        return True
-    except:
-        return False
 
 
 def get_soup(url):
@@ -163,7 +153,7 @@ def create_data():
         df = df.merge(df_bis, on='datetime', how='outer', copy=False)
     # utilise une interpolation linaire pour inférer le niveau d'eau les jours manquants
     df.interpolate(method="linear", limit_direction="both", inplace=True)
-    #trie par date
+    #tri par date
     df.sort_values(by='datetime')
     #écrit le fichier
     df.to_csv('data.csv')
