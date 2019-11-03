@@ -86,11 +86,10 @@ def get_data(site_code, site_name):
     content = "\n".join(table_rows)
     
     #ouvre un fichier
-    file1 = open("data/"+file_name, "w")
+    file1 = open("water/"+file_name, "w")
     file1.write(content)
     file1.close()
     
-    #On s'en fou de ce que la fonction renvoit, on veut juste écrire les données dans un fichier
     return None
 
 def scrap(url):
@@ -103,13 +102,13 @@ def scrap(url):
     
     # on choppe les données de tous les lacs/réservoirs et on les écrits dans des fichier
     # ça prend environ ~10 min de scrapper les pages de 324 point d'eau qui nous intéressent
-    
     for code, name in Liste:
         get_data(code, name)
-    for file in os.listdir("data"):
-        if (os.stat("data/" + file).st_size < 50_000) or ("LAKE" not in file and "RESERVOIR" not in file):
+        
+    for file in os.listdir("water"):
+        if (os.stat("water/" + file).st_size < 50_000) or ("LAKE" not in file and "RESERVOIR" not in file):
             print(file)
-            os.remove("data/" + file)
+            os.remove("water/" + file)
             
 
 def format_dataframes():
@@ -117,20 +116,22 @@ def format_dataframes():
     Formate toutes les données récoltées pour crée les csv des données des différents lieux
     """
     
-    for file in os.listdir("data"):
+    for file in os.listdir("water"):
         
-        df = pd.read_csv("data/" + file, sep="\t")
-        #enlève 2 colonnes inutiles
+        df = pd.read_csv("water/" + file, sep="\t")
         df = df.drop(columns=['agency_cd', 'site_no'])
-        #enlève d'autre colonne inutile (modifie en place)
         for col in df.columns:
             if df[col][0] == 'A':
                 df.drop(columns=col, inplace=True)
+                
         #fait une interpolation lineaire pour inférer les données manquantes
         df.interpolate(method="linear", limit_direction="both", inplace=True)
+        
         # fait la somme de toutes les colonnes avec des valeurs numériques 
         # pour obtenir le volume d'eau totale des différents points d'eau du lieu
+        
         df = pd.concat((df['datetime'], df[df.columns[1:]].sum(axis=1)), axis=1)
+        
         #renomme la colonne du volume d'eau avec le nom du lieu
         df.rename(columns={df.columns[1] : file[:-3]}, inplace=True)
         try:
@@ -141,23 +142,23 @@ def format_dataframes():
 
 def create_data():
     """
-    créer un fichier data.csv qui est le dataframe finale contenant toute nos données, proprement formaté
+    créer un fichier water.csv qui est le dataframe finale contenant toute nos données, proprement formaté
     """
     
     #lit le premier csv du répertoire des csv
     df = pd.read_csv("series/" + os.listdir("series")[0], index_col=0)
+    
     # le fusionne avec les suivants
-    for file in os.listdir("series")[1:]:
-        df_bis = pd.read_csv("series/" + file, index_col=0)
+    for file in os.listdir("water_series")[1:]:
+        df_bis = pd.read_csv("water_series/" + file, index_col=0)
         #fusionne les dataframes à partir de la date
         df = df.merge(df_bis, on='datetime', how='outer', copy=False)
+        
     # utilise une interpolation linaire pour inférer le niveau d'eau les jours manquants
     df.interpolate(method="linear", limit_direction="both", inplace=True)
-    #tri par date
     df.sort_values(by='datetime')
-    #écrit le fichier
-    df.to_csv('data.csv')
-    #accessoirement renvoit le dataframe créé
+    df.to_csv('water_level.csv')
+    
     return df
 
 def main(url):
