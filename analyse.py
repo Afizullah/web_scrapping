@@ -6,6 +6,8 @@ Created on Sun Nov  3 01:39:51 2019
 """
 
 import pandas as pd
+from statsmodels.tsa.seasonal import seasonal_decompose
+
 
 price = pd.read_csv("price.csv", index_col=0)
 water = pd.read_csv("water_level.csv", index_col=0)
@@ -28,3 +30,12 @@ df.price.interpolate(method='linear', limit_direction='both', inplace=True)
 
 
 df.plot(x='datetime', y=['price', 'level'], figsize=(10, 5))
+
+price = price.set_index('datetime', drop=True)
+price_decomp = seasonal_decompose(price, model='additive',freq=12)
+
+water = water.set_index('datetime', drop=True)
+water_decomp = seasonal_decompose(water, model='additive',freq=12)
+
+price_decomp.plot()
+water_decomp.plot()
