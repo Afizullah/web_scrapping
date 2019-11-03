@@ -80,6 +80,7 @@ def create_data():
         dfs.append(_df)
     df = pd.concat(dfs, ignore_index=True)
     return df
-
+    
+download_data()
 resultat = create_data()
 resultat.to_csv("price.csv")
